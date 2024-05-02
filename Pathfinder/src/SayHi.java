@@ -22,7 +22,9 @@ public class SayHi extends Application {
         Label nameLabel = new Label("Namn:");
         nameField = new TextField();
         Button greetButton = new Button("Hälsa");
+
         greetButton.setOnAction(new Handler());
+
         greetLabel = new Label("Hej");
         root.getChildren().addAll(nameLabel, nameField, greetButton, greetLabel);
 
