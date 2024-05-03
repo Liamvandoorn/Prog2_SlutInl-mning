@@ -1,4 +1,4 @@
-public class Location implements Node{
+public class Location {
     private final String name;
     private final double x, y;
 
@@ -8,12 +8,10 @@ public class Location implements Node{
         this.y = y;
     }
 
-    @Override
     public String getName(){
         return name;
     }
 
-    @Override
     public String toString(){
         return name + " [" + x + ", " + y + "]";
     }

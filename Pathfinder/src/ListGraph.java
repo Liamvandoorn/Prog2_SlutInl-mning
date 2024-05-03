@@ -27,6 +27,7 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
     }
 
     // Checkers ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
     public boolean pathExists(T from, T to){
         if (!connectionMap.containsKey(from) || !connectionMap.containsKey(to)) {
             return false;
@@ -108,6 +109,8 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
 
     // Setters :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+
+
     private void validateNodeExistance(T node){
         if (!connectionMap.containsKey(node)) {
             throw new NoSuchElementException("Given node doesn't exist in ListGraph: " + node.toString());
@@ -155,7 +158,7 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
 
         // create and add edges to nodes in graph
         connectionMap.get(node1).add(new Edge<>(node2, weight, name));
-        connectionMap.get(node2).add(new Edge<>(node1, weight, name));
+        //connectionMap.get(node2).add(new Edge<>(node1, weight, name));
     }
 
     public void disconnect(T node1, T node2){

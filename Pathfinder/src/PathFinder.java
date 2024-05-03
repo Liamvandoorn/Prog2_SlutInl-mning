@@ -10,20 +10,31 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.*;
+import java.io.FileReader;
+import java.io.BufferedReader;
 
 import javafx.stage.Stage;
 
+//gör node-brockorna till klasser
+
 public class PathFinder extends Application  {
 
-
-    private ImageView imageView = new ImageView();
-    private MenuBar fileMenuBar = new MenuBar();
-    private HBox btnMenu = new HBox(20); // MN: pixel spacing between components within menu
+    private final ImageView imageView = new ImageView();
+    private final MenuBar fileMenuBar = new MenuBar();
+    private final HBox btnMenu = new HBox(20); // MN: pixel spacing between components within menu
     private Stage stage;
 
-    private ListGraph graph = new ListGraph();
+    private ListGraph<Location> graph = new ListGraph<Location>();
 
-    // --------------------------------------------
+    private boolean isCacheSaved;
+
+    // SETTER :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.
 
 
     public void start(Stage primaryStage){
@@ -40,7 +51,10 @@ public class PathFinder extends Application  {
         MenuItem menuExit = new MenuItem("Exit");
 
         menuNewMap.setOnAction(new NewMapHandler());
+        menuOpenFile.setOnAction(new OpenMapHandler());
         menuExit.setOnAction(actionEvent -> Platform.exit());
+        menuSave.setOnAction(new SaveHandler());
+
 
         fileMenuBar.setId("menu");
         fileMenu.setId("menuFile");
@@ -69,6 +83,10 @@ public class PathFinder extends Application  {
         btnMenu.setAlignment(Pos.CENTER);
         btnMenu.setMinHeight(60);
 
+        /*
+
+        */
+
         // add container boxes to root node
         root.getChildren().addAll(fileMenuBar, btnMenu, imageView);
 
@@ -78,20 +96,150 @@ public class PathFinder extends Application  {
         primaryStage.show();
     }
 
-    class NewMapHandler implements EventHandler<ActionEvent>{
-        @Override public void handle(ActionEvent event){
-            if (imageView.getImage() == null){ // ändra refactor baserat på boolean sats
-                Image image = new Image("europa.gif");
-                imageView.setImage(image);
-                stage.setWidth(image.getWidth());
-                stage.setHeight(image.getHeight() + stage.getHeight());
-            }// skapa else sats för att radera karta på en map som redan har data.
+    private void loadMap(String strPath){
+        if (strPath.isEmpty()){
+            strPath = "europa.gif";
+        }
+        Image image = new Image(strPath);
+        imageView.setImage(image);
+        stage.setWidth(image.getWidth());
+        stage.setHeight(image.getHeight() + stage.getHeight());
+    }
+
+
+    public void loadLocationGraph(String fileName) {
+        try {
+            //read lines from textfile and split to retrieve information and create node
+            FileReader fr = new FileReader(fileName);
+            BufferedReader br = new BufferedReader(fr);
+            // load first line into list
+            String mapPath = br.readLine();
+            String[] a = mapPath.split(":");
+            loadMap(a[1]);
+            String[] tmp = br.readLine().split(";");
+            List<String> listOfLocationStrings = Arrays.asList(tmp);
+            System.out.println("locationStrings:" + listOfLocationStrings);
+            createLocationNodesFromList(listOfLocationStrings);
+            connectLocationNodes(br);
+
+            fr.close();
+            br.close();
+        } catch (FileNotFoundException e ){
+            //return;
+            System.out.println("File not found: " + e);
+        } catch (Exception e) {
+            //return;
+            System.out.println("Exception:" + e);
+        }
+    }
+
+    /**
+     * Helper method
+     */
+    private void connectLocationNodes(BufferedReader br){
+        try {
+            Set<Location> allNodes  = graph.getNodes();
+            HashMap<String, Location> nodeMap = new HashMap<>();
+            for (Location node : allNodes) {
+                nodeMap.put(node.getName(), node);
+            }
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                    String[] connectionParts = line.split(";");
+
+                    Location from = nodeMap.get(connectionParts[0]);
+                    Location to = nodeMap.get(connectionParts[1]);
+                    String name = connectionParts[2];
+                    int weight = Integer.parseInt(connectionParts[3]);
+
+                    graph.connect(from, to, name, weight);
+            }
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+    }
+
+    /**
+     * Helper method.
+     *
+     * @param listOfLocationStrings
+     */
+    private void createLocationNodesFromList(List<String> listOfLocationStrings) {
+        try {
+            String locationName = "";
+            double x = 99999;
+            double y = 99999;
+            int count = 0;
+            for (String str : listOfLocationStrings) {
+                if (count == 0) {
+                    locationName = str;
+                    count += 1;
+                } else if (count == 1) {
+                    x = Double.parseDouble(str);
+                    count += 1;
+                } else if (count == 2) {
+                    y = Double.parseDouble(str);
+
+                    Location locationNode = new Location(locationName, x, y);
+                    graph.add(locationNode);
+                    count = 0;
+                }
+            }
+        } catch (Error e) {
+            //System.out.println("Error occured: " + e);
         }
     }
 
     public static void main(String[] args) {
         launch(args);
     }
+
+
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+    class NewMapHandler implements EventHandler<ActionEvent>{
+        @Override
+        public void handle(ActionEvent event){
+            if (imageView.getImage() == null){ // ändra refactor baserat på boolean sats
+                loadMap("");
+            } else {
+                // spara sats om ny data har lagts till. ATT GÖRA:
+                System.out.println("BEFORE" + graph.toString());
+                graph  = new ListGraph<Location>();
+                System.out.println("AFTER" + graph.toString());
+                loadMap("");
+            }
+        }
+    }
+
+    class SaveHandler implements EventHandler<ActionEvent>{
+        @Override
+        public void handle(ActionEvent event) {
+            showAlert(AlertType.INFORMATION, "Information", "This is an information alert", "Hello, world!");
+        }
+    }
+
+    public static void showAlert(AlertType alertType, String title, String headerText, String contentText) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle("Warning!");
+        alert.setHeaderText("Unsaved changes, continue anyway?");
+        alert.getButtonTypes().add(ButtonType.CANCEL);
+        alert.showAndWait();
+    }
+
+    class OpenMapHandler implements EventHandler<ActionEvent>{
+        @Override
+        public void handle(ActionEvent event){
+            String filePath = "./PathFinder/src/europa.graph";
+            loadLocationGraph(filePath);
+
+        }
+    }
+
+    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 }
+
 
 
