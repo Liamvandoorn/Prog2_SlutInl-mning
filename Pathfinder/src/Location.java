@@ -13,6 +13,6 @@ public class Location {
     }
 
     public String toString(){
-        return name + " [" + x + ", " + y + "]";
+        return name + " = [" + x + ", " + y + "]";
     }
 }
