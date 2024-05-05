@@ -6,8 +6,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
@@ -43,6 +41,16 @@ public class PathFinder extends Application  {
     // CHECKERS :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.
 
 
+    /**
+     * Application specific method for checking if data is saved, should only be used if data has already been loaded.
+     * If lastEditIsSaved is false, it will show alert specific for saving instance of application
+     */
+    private void controlSavedInstance(){
+        if (!lastEditIsSaved) {
+            showAlert(AlertType.CONFIRMATION, "Warning!", "Unsaved changes, continue anyway?");
+        }
+    }
+
     // GETTERS :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.
 
     public boolean getLastEditIsSaved(){
@@ -65,16 +73,17 @@ public class PathFinder extends Application  {
         stage.setHeight(image.getHeight() + stage.getHeight());
     }
 
-    // Location -----------------------------------
+    // Location SETTERS -----------------
 
 
     // Location/Map Save -----------------------------------
 
     /**
-     * Helper method that consist of three parts
+     * Save method that consist of three parts
      * {@code 1. write in gif path }
      * {@code 2. write in the nodes }
      * {@code 3. write in the connections }
+     * Should never be used if a data hasn't been loaded first
      */
     private void saveMap() {
         try {
@@ -83,16 +92,23 @@ public class PathFinder extends Application  {
             // write in gif path
             bw.write("file:europa.gif\n");
 
-            // write in the nodes
-            for (Location location : graph.getNodes()) {
-                String[] parts = location.toString().split("\\s=\\s\\[|]|,\\s"); // https://regex101.com/
-                //System.out.println(Arrays.toString(parts));
+            Set<Location> nodes = graph.getNodes();
+            Iterator<Location> setIterator = nodes.iterator();
+
+            while (setIterator.hasNext()){
+                Location currentNode = setIterator.next();
+                String[] parts = currentNode.toString().split("\\s=\\s\\[|]|,\\s");
+
                 bw.write(
                         parts[0] + ";" +
-                            parts[1] + ";" +
-                            parts[2] + ";");
+                                parts[1] + ";" +
+                                parts[2] );
+                // last node never has ; in prinout so we put it within a if check, also why a whle iterator was prefered over a for each.
+                if (setIterator.hasNext()) {
+                    bw.write(";");
+                }
             }
-            // POSSIBLE VPL ISSUE: appends ; at the end, i don't know if they check for that or if that's allowed.
+
             bw.write("\n");
 
             // write in the connections
@@ -215,7 +231,12 @@ public class PathFinder extends Application  {
 
         menuNewMap.setOnAction(new NewMapHandler());
         menuOpenFile.setOnAction(new OpenMapHandler());
-        menuExit.setOnAction(actionEvent -> Platform.exit());
+        menuExit.setOnAction(actionEvent -> {
+            if (!lastEditIsSaved) {
+                controlSavedInstance();
+            }
+            Platform.exit();
+        });
         menuSave.setOnAction(new SaveHandler());
 
 
@@ -265,12 +286,13 @@ public class PathFinder extends Application  {
     class NewMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
+            controlSavedInstance();
             if (imageView.getImage() == null){ // ändra refactor baserat på boolean sats
                 loadMap("");
             } else {
                 // spara sats om ny data har lagts till. ATT GÖRA:
                 if (!lastEditIsSaved){
-                    showAlert(AlertType.CONFIRMATION, "Warning!", "Unsaved changes, continue anyway?");
+                    controlSavedInstance();
                 }
                 System.out.println("BEFORE" + graph.toString());
                 graph  = new ListGraph<Location>();
@@ -287,16 +309,23 @@ public class PathFinder extends Application  {
         }
     }
 
-    private static void showAlert(AlertType alertType, String title, String headerText) {
+    private void showAlert(AlertType alertType, String title, String headerText) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
-        alert.showAndWait();
+        alert.showAndWait().ifPresent(response -> {
+            String btnText = response.getText();
+            System.out.println(btnText);
+            if (btnText.equals("OK")) {
+                saveMap();
+            }
+        });
     }
 
     class OpenMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
+            controlSavedInstance();
             String filePath = "./PathFinder/src/europa.graph";
             loadLocationGraph(filePath);
 
