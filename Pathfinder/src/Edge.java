@@ -1,5 +1,5 @@
 import java.io.Serializable;
-public class Edge <T> implements Serializable {
+public class Edge <T> implements Serializable{
     // T stands for object
 
     private final T destination;

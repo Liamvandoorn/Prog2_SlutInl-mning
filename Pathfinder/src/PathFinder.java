@@ -3,18 +3,22 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.shape.Line;
 
 import java.io.*;
 import java.util.*;
 
 import javafx.stage.Stage;
+
 
 
 /**
@@ -29,40 +33,217 @@ import javafx.stage.Stage;
 
 public class PathFinder extends Application  {
 
-    private final ImageView imageView = new ImageView();
     private final MenuBar fileMenuBar = new MenuBar();
     private final HBox btnMenu = new HBox(20); // MN: pixel spacing between components within menu
+    private final ImageView imageView = new ImageView();
+    private final Pane mapPane = new Pane();
     private Stage stage;
 
     private ListGraph<Location> graph = new ListGraph<Location>();
 
     private boolean lastEditIsSaved = true;
 
-    // CHECKERS :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.
+    private Button findPathBtn = new Button();
+    private Button showConnectionBtn = new Button();
+    private Button newPlaceBtn = new Button();
+    private Button newConnectionBtn = new Button();
+    private Button changeConnectionBtn = new Button();
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    public void start(Stage primaryStage){
+        this.stage = primaryStage;
+        VBox root = new VBox();
+
+        inializeFileMenu();
+        initalizeBtnMenu();
+
+        // add container boxes to root node
+        mapPane.getChildren().add(imageView);
+        root.getChildren().addAll(fileMenuBar, btnMenu, mapPane);
+
+        Scene scene = new Scene (root, 618, 80);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("PathFinder");
+        primaryStage.show();
+    }
+
+    private void inializeFileMenu() {
+        Menu fileMenu = new Menu("File");
+        fileMenuBar.getMenus().addAll(fileMenu);
+
+        MenuItem menuNewMap = new MenuItem("New Map");
+        MenuItem menuOpenFile = new MenuItem("Open");
+        MenuItem menuSave = new MenuItem("Save");
+        MenuItem menuSaveImage = new MenuItem("Save Image");
+        MenuItem menuExit = new MenuItem("Exit");
+
+
+        //top corner close button
+        stage.setOnCloseRequest(actionEvent -> {
+            controlSavedInstance(new CloseAppHandler());
+            actionEvent.consume();
+            //Platform.exit();
+        });
+
+        menuNewMap.setOnAction(actionEvent -> {
+            enableButtons();
+            controlSavedInstance(new NewMapHandler());
+        });
+
+        menuOpenFile.setOnAction(actionEvent -> {
+            enableButtons();
+            controlSavedInstance(new OpenMapHandler());
+        });
+
+        menuExit.setOnAction(actionEvent -> {
+            controlSavedInstance(new CloseAppHandler());
+            //Platform.exit();
+        });
+
+        menuSave.setOnAction(new SaveHandler());
+
+        fileMenuBar.setId("menu");
+        fileMenu.setId("menuFile");
+        menuNewMap.setId("menuNewMap");
+        menuOpenFile.setId("menuOpenFile");
+        menuSave.setId("menuSave");
+        menuSaveImage.setId("menuSaveImage");
+        menuExit.setId("menuExit");
+
+        fileMenu.getItems().addAll(menuNewMap, menuOpenFile, menuSave, menuSaveImage, menuExit);
+    }
+
+    private void initalizeBtnMenu() {
+        findPathBtn = new Button("Find path");
+        showConnectionBtn = new Button("Show Connection");
+        newPlaceBtn = new Button("New place");
+        newConnectionBtn = new Button("New Connection");
+        changeConnectionBtn = new Button("New place");
+
+        findPathBtn.setDisable(true);
+        showConnectionBtn.setDisable(true);
+        newPlaceBtn.setDisable(true);
+        newConnectionBtn.setDisable(true);
+        changeConnectionBtn.setDisable(true);
+
+        newPlaceBtn.setOnAction(actionEvent -> {
+            isMapLoaded();
+            newPlaceBtn.setDisable(true);
+            stage.getScene().setCursor(Cursor.CROSSHAIR);
+
+            mapPane.setOnMouseClicked(mEvent -> {
+                NewPlaceHandler handler = new NewPlaceHandler();
+                handler.handle(mEvent);
+
+                newPlaceBtn.setDisable(false);
+                stage.getScene().setCursor(Cursor.DEFAULT);
+                mapPane.setOnMouseClicked(null);
+            });
+        });
+
+        btnMenu.setId("btnMenu");
+        findPathBtn.setId("btnFindPath");
+        showConnectionBtn.setId("btnShowConnection");
+        newPlaceBtn.setId("btnNewPlace");
+        newConnectionBtn.setId("btnNewConnection");
+        changeConnectionBtn.setId("btnChangeConnection");
+
+        btnMenu.getChildren().addAll(findPathBtn, showConnectionBtn, newPlaceBtn, newConnectionBtn, changeConnectionBtn);
+        btnMenu.setAlignment(Pos.CENTER);
+        btnMenu.setMinHeight(60);
+    }
 
     /**
      * Application specific method for checking if data is saved, should only be used if data has already been loaded.
      * If lastEditIsSaved is false, it will show alert specific for saving instance of application
      */
+
+    private void enableButtons(){
+        findPathBtn.setDisable(false);
+        showConnectionBtn.setDisable(false);
+        newPlaceBtn.setDisable(false);
+        newConnectionBtn.setDisable(false);
+        changeConnectionBtn.setDisable(false);
+    }
+
     private void controlSavedInstance(EventHandler<ActionEvent> event){
         if (!lastEditIsSaved) {
-            showAlert(AlertType.CONFIRMATION, "Warning!", "Unsaved changes, continue anyway?", event);
+            showSaveAlert(event);
         } else {
             event.handle(new ActionEvent());
         }
     }
 
-    // GETTERS :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.
+    /**
+     * Helper function for checking if a map is loaded
+     * @return
+     */
+
+    private boolean isMapLoaded () {
+        System.out.println(imageView.getImage());
+        if (imageView.getImage() != null) {
+            return true;
+        }
+        return false;
+    }
 
     public boolean getLastEditIsSaved(){
         return lastEditIsSaved;
     }
 
-    // SETTER :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.
+    private void showSaveAlert(EventHandler<ActionEvent> event) {
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Warning!");
+        alert.setHeaderText("Unsaved changes, continue anyway?");
+        alert.showAndWait().ifPresent(response -> {
 
-    public static void main(String[] args) {
-        launch(args);
+            String btnText = response.getText();
+            System.out.println(btnText);
+            if (btnText.equals("OK")) {
+                lastEditIsSaved = true;//FOR TESTING !!!!!!!
+                event.handle(new ActionEvent());
+            } else {
+                alert.close();
+            }
+        });
+    }
+
+    private void showNode(Location location) {
+        try {
+            // draw node on mapPane.
+            mapPane.getChildren().add(location.getShape());
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    private void showAllNodes() {
+        for (Location location : graph.getNodes()){
+            showNode(location);
+        }
+    }
+
+    private void drawConnection(Location from, Location to) {
+        // issue, they are above the circle, blocking the clickable area, maybe adjust it somehow
+        ArrayList<Double> fromXY = from.getCoordinates();
+        ArrayList<Double> toXY = to.getCoordinates();
+
+        Line line = new Line(fromXY.get(0), fromXY.get(1), toXY.get(0), toXY.get(1));
+        line.setMouseTransparent(true); // demo wants it to be shown above the circles but still clickable
+        mapPane.getChildren().add(line);
+    }
+
+    private void drawAllConnections() {
+        // for each node in graph
+        for (Location location : graph.getNodes()) {
+            // Get edges
+            for (Edge edge : graph.getEdgesFrom(location)) {
+                drawConnection(location, (Location) edge.getDestination());
+            }
+        }
     }
 
     private void loadMap(String strPath){
@@ -74,11 +255,6 @@ public class PathFinder extends Application  {
         stage.setWidth(image.getWidth());
         stage.setHeight(image.getHeight() + stage.getHeight());
     }
-
-    // Location SETTERS -----------------
-
-
-    // Location/Map Save -----------------------------------
 
     /**
      * Save method that consist of three parts
@@ -131,8 +307,6 @@ public class PathFinder extends Application  {
         }
 
     }
-
-    // Location Load -----------------------------------
 
     public void loadLocationGraph(String fileName) {
         try {
@@ -216,88 +390,7 @@ public class PathFinder extends Application  {
         }
     }
 
-
-    // START :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    public void start(Stage primaryStage){
-        this.stage = primaryStage;
-        VBox root = new VBox();
-
-        Menu fileMenu = new Menu("File");
-        fileMenuBar.getMenus().addAll(fileMenu);
-
-        MenuItem menuNewMap = new MenuItem("New Map");
-        MenuItem menuOpenFile = new MenuItem("Open");
-        MenuItem menuSave = new MenuItem("Save");
-        MenuItem menuSaveImage = new MenuItem("Save Image");
-        MenuItem menuExit = new MenuItem("Exit");
-
-
-        //top corner close button
-        primaryStage.setOnCloseRequest(actionEvent -> {
-                controlSavedInstance(new CloseAppHandler());
-                actionEvent.consume();
-
-            //Platform.exit();
-        });
-
-        menuNewMap.setOnAction(actionEvent -> {
-            controlSavedInstance(new NewMapHandler());
-        });
-
-        menuOpenFile.setOnAction(actionEvent -> {
-            controlSavedInstance(new OpenMapHandler());
-        });
-
-        menuExit.setOnAction(actionEvent -> {
-                controlSavedInstance(new CloseAppHandler());
-
-            //Platform.exit();
-        });
-        menuSave.setOnAction(new SaveHandler());
-
-
-        fileMenuBar.setId("menu");
-        fileMenu.setId("menuFile");
-        menuNewMap.setId("menuNewMap");
-        menuOpenFile.setId("menuOpenFile");
-        menuSave.setId("menuSave");
-        menuSaveImage.setId("menuSaveImage");
-        menuExit.setId("menuExit");
-
-        fileMenu.getItems().addAll(menuNewMap, menuOpenFile, menuSave, menuSaveImage, menuExit);
-
-        Button findPathBtn = new Button("Find path");
-        Button showConnectionBtn = new Button("Show Connection");
-        Button newPlaceBtn = new Button("New place");
-        Button newConnectionBtn = new Button("New Connection");
-        Button changeConnectionBtn = new Button("New place");
-
-        btnMenu.setId("btnMenu");
-        findPathBtn.setId("btnFindPath");
-        showConnectionBtn.setId("btnShowConnection");
-        newPlaceBtn.setId("btnNewPlace");
-        newConnectionBtn.setId("btnNewConnection");
-        changeConnectionBtn.setId("btnChangeConnection");
-
-        btnMenu.getChildren().addAll(findPathBtn, showConnectionBtn, newPlaceBtn, newConnectionBtn, changeConnectionBtn);
-        btnMenu.setAlignment(Pos.CENTER);
-        btnMenu.setMinHeight(60);
-
-        /*
-
-        */
-
-        // add container boxes to root node
-        root.getChildren().addAll(fileMenuBar, btnMenu, imageView);
-
-        Scene scene = new Scene (root, 618, 80);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("PathFinder");
-        primaryStage.show();
-    }
-
     // Handler Classes :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
 
     class NewMapHandler implements EventHandler<ActionEvent>{
         @Override
@@ -327,55 +420,6 @@ public class PathFinder extends Application  {
         }
     }
 
-    private void showAlert(AlertType alertType, String title, String headerText, EventHandler<ActionEvent> event) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(headerText);
-        alert.showAndWait().ifPresent(response -> {
-            String btnText = response.getText();
-            System.out.println(btnText);
-            if (btnText.equals("OK")) {
-                lastEditIsSaved = true;//FOR TESTING !!!!!!!
-                event.handle(new ActionEvent());
-
-            } else {
-
-                alert.close();
-            }
-        });
-    }
-
-
-    /*private void showAlert(AlertType alertType, String title, String headerText, EventHandler<ActionEvent> event) {
-        Alert alert = new Alert(alertType);
-        alert.setTitle(title);
-        alert.setHeaderText(headerText);
-        //alert.showAndWait();
-
-        var buttonClicked = alert.showAndWait();
-        if (buttonClicked.isPresent()){
-            ButtonType result = buttonClicked.get();
-            System.out.println(result.getText());
-            if (result.equals(ButtonType.OK)){
-                System.out.println("ok clicked");
-                event.handle(new ActionEvent());
-
-            } else if (result.equals(ButtonType.CANCEL)){
-                System.out.println("cancel clicked");
-                alert.close();
-            }
-        }
-
-
-
-    }
-
-     */
-
-
-
-
-
     class OpenMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
@@ -385,17 +429,48 @@ public class PathFinder extends Application  {
             loadLocationGraph(filePath);
             System.out.println(graph);
             System.out.println("open");
-
+            showAllNodes();
+            drawAllConnections();
         }
     }
 
     class CloseAppHandler implements EventHandler<ActionEvent>{
+        @Override
         public void handle(ActionEvent event){
             Platform.exit();
         }
     }
 
-    // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    class NewPlaceHandler implements EventHandler<MouseEvent>{
+        @Override
+        public void handle(MouseEvent event){
+
+            double xCoordinate = event.getX();
+            double yCoordinate = event.getY();
+            System.out.println(xCoordinate + ":" + yCoordinate);
+
+            TextInputDialog tid = new TextInputDialog("");
+            tid.setTitle("Name");
+            tid.setHeaderText("");
+            tid.setContentText("Name of place:");
+
+            Optional<String> result = tid.showAndWait();
+            System.out.println(result);
+            if (result.isPresent()){
+                System.out.println(result);
+                if ( !result.get().isEmpty()){ // check for blankspaces
+                    String locationName = result.get();
+                    System.out.println(locationName);
+                    Location location = new Location(locationName, xCoordinate, yCoordinate);
+                    graph.add(location);
+                    showNode(location);
+                    lastEditIsSaved = false;
+                }
+            }
+            mapPane.setOnMouseClicked(null);
+        }
+    }
+
 }
 
 
