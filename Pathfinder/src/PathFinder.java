@@ -45,9 +45,11 @@ public class PathFinder extends Application  {
      * Application specific method for checking if data is saved, should only be used if data has already been loaded.
      * If lastEditIsSaved is false, it will show alert specific for saving instance of application
      */
-    private void controlSavedInstance(){
+    private void controlSavedInstance(EventHandler<ActionEvent> event){
         if (!lastEditIsSaved) {
-            showAlert(AlertType.CONFIRMATION, "Warning!", "Unsaved changes, continue anyway?");
+            showAlert(AlertType.CONFIRMATION, "Warning!", "Unsaved changes, continue anyway?", event);
+        } else {
+            event.handle(new ActionEvent());
         }
     }
 
@@ -229,13 +231,27 @@ public class PathFinder extends Application  {
         MenuItem menuSaveImage = new MenuItem("Save Image");
         MenuItem menuExit = new MenuItem("Exit");
 
-        menuNewMap.setOnAction(new NewMapHandler());
-        menuOpenFile.setOnAction(new OpenMapHandler());
+
+        //top corner close button
+        primaryStage.setOnCloseRequest(actionEvent -> {
+                controlSavedInstance(new CloseAppHandler());
+                actionEvent.consume();
+
+            //Platform.exit();
+        });
+
+        menuNewMap.setOnAction(actionEvent -> {
+            controlSavedInstance(new NewMapHandler());
+        });
+
+        menuOpenFile.setOnAction(actionEvent -> {
+            controlSavedInstance(new OpenMapHandler());
+        });
+
         menuExit.setOnAction(actionEvent -> {
-            if (!lastEditIsSaved) {
-                controlSavedInstance();
-            }
-            Platform.exit();
+                controlSavedInstance(new CloseAppHandler());
+
+            //Platform.exit();
         });
         menuSave.setOnAction(new SaveHandler());
 
@@ -286,13 +302,14 @@ public class PathFinder extends Application  {
     class NewMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
-            controlSavedInstance();
+            new NewMapHandler();
+            //lastEditIsSaved = false;  //FOR TESTING!!!!!!
             if (imageView.getImage() == null){ // ändra refactor baserat på boolean sats
                 loadMap("");
             } else {
                 // spara sats om ny data har lagts till. ATT GÖRA:
                 if (!lastEditIsSaved){
-                    controlSavedInstance();
+                    controlSavedInstance(new NewMapHandler());
                 }
                 System.out.println("BEFORE" + graph.toString());
                 graph  = new ListGraph<Location>();
@@ -305,11 +322,12 @@ public class PathFinder extends Application  {
     class SaveHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event) {
-            saveMap();
+            //saveMap();
+            lastEditIsSaved = false; //FOR TESTING !!!!!
         }
     }
 
-    private void showAlert(AlertType alertType, String title, String headerText) {
+    private void showAlert(AlertType alertType, String title, String headerText, EventHandler<ActionEvent> event) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
@@ -317,18 +335,63 @@ public class PathFinder extends Application  {
             String btnText = response.getText();
             System.out.println(btnText);
             if (btnText.equals("OK")) {
-                saveMap();
+                lastEditIsSaved = true;//FOR TESTING !!!!!!!
+                event.handle(new ActionEvent());
+
+            } else {
+
+                alert.close();
             }
         });
     }
 
+
+    /*private void showAlert(AlertType alertType, String title, String headerText, EventHandler<ActionEvent> event) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        //alert.showAndWait();
+
+        var buttonClicked = alert.showAndWait();
+        if (buttonClicked.isPresent()){
+            ButtonType result = buttonClicked.get();
+            System.out.println(result.getText());
+            if (result.equals(ButtonType.OK)){
+                System.out.println("ok clicked");
+                event.handle(new ActionEvent());
+
+            } else if (result.equals(ButtonType.CANCEL)){
+                System.out.println("cancel clicked");
+                alert.close();
+            }
+        }
+
+
+
+    }
+
+     */
+
+
+
+
+
     class OpenMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
-            controlSavedInstance();
-            String filePath = "./PathFinder/src/europa.graph";
+            //lastEditIsSaved = false;
+            //new OpenMapHandler();
+            String filePath = "./src/europa.graph";
             loadLocationGraph(filePath);
+            System.out.println(graph);
+            System.out.println("open");
 
+        }
+    }
+
+    class CloseAppHandler implements EventHandler<ActionEvent>{
+        public void handle(ActionEvent event){
+            Platform.exit();
         }
     }
 
