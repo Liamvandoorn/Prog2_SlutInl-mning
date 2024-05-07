@@ -42,6 +42,17 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
         return new HashSet<>(connectionMap.keySet());
     }
 
+    public T getNode(String nodeName){
+        for (T key : connectionMap.keySet()) {
+            if (key instanceof Location) {
+                if (((Location) key).getName().equals(nodeName)){
+                    return key;
+                }
+            }
+        }
+        return null;
+    }
+
     public Collection<Edge<T>> getEdgesFrom(T node){
         validateNodeExistance(node);
         return new HashSet<>(connectionMap.get(node));

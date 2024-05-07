@@ -1,24 +1,38 @@
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.Node;
 
+
+import java.awt.*;
 import java.io.*;
+import java.sql.Array;
 import java.util.*;
+import java.util.List;
 
 import javafx.stage.Stage;
-
+import javafx.scene.shape.Shape;
+import javafx.scene.shape.Circle;
 
 
 /**
@@ -36,7 +50,7 @@ public class PathFinder extends Application  {
     private final MenuBar fileMenuBar = new MenuBar();
     private final HBox btnMenu = new HBox(20); // MN: pixel spacing between components within menu
     private final ImageView imageView = new ImageView();
-    private final Pane mapPane = new Pane();
+    private Pane mapPane = new Pane();
     private Stage stage;
 
     private ListGraph<Location> graph = new ListGraph<Location>();
@@ -80,7 +94,6 @@ public class PathFinder extends Application  {
         MenuItem menuSaveImage = new MenuItem("Save Image");
         MenuItem menuExit = new MenuItem("Exit");
 
-
         //top corner close button
         stage.setOnCloseRequest(actionEvent -> {
             controlSavedInstance(new CloseAppHandler());
@@ -100,7 +113,6 @@ public class PathFinder extends Application  {
 
         menuExit.setOnAction(actionEvent -> {
             controlSavedInstance(new CloseAppHandler());
-            //Platform.exit();
         });
 
         menuSave.setOnAction(new SaveHandler());
@@ -134,14 +146,19 @@ public class PathFinder extends Application  {
             newPlaceBtn.setDisable(true);
             stage.getScene().setCursor(Cursor.CROSSHAIR);
 
-            mapPane.setOnMouseClicked(mEvent -> {
+        mapPane.setOnMouseClicked(Event -> {
                 NewPlaceHandler handler = new NewPlaceHandler();
-                handler.handle(mEvent);
+                handler.handle(Event);
 
                 newPlaceBtn.setDisable(false);
                 stage.getScene().setCursor(Cursor.DEFAULT);
                 mapPane.setOnMouseClicked(null);
             });
+        });
+
+        newConnectionBtn.setOnAction(actionEvent -> {
+            NewConnectionHandler handler = new NewConnectionHandler();
+            handler.handle(actionEvent);
         });
 
         btnMenu.setId("btnMenu");
@@ -190,6 +207,8 @@ public class PathFinder extends Application  {
         return false;
     }
 
+    // draw methods -----
+
     public boolean getLastEditIsSaved(){
         return lastEditIsSaved;
     }
@@ -209,6 +228,13 @@ public class PathFinder extends Application  {
                 alert.close();
             }
         });
+    }
+
+    private void showErrorAlert(String contextText){
+        Alert errorAlert = new Alert(AlertType.ERROR);
+        errorAlert.setTitle("Error!");
+        errorAlert.setContentText(contextText);
+        errorAlert.showAndWait();
     }
 
     private void showNode(Location location) {
@@ -245,6 +271,45 @@ public class PathFinder extends Application  {
             }
         }
     }
+
+    /**
+     * Helper method, should only be used if graph has been saved or emptied
+     */
+
+    private void resetMapPane(){
+        // check if listgraph is empty
+        if (graph.getNodes().isEmpty()){
+            List<Node> copyOfChildren = new ArrayList<Node>(mapPane.getChildren());
+
+            for (Node node : copyOfChildren) {
+                if (node instanceof Circle) {
+                    mapPane.getChildren().remove(node);
+                } else if (node instanceof Line) {
+                    mapPane.getChildren().remove(node);
+                }
+            }
+        } else {
+            System.out.println("Can't reset map since there's unsaved data");
+        }
+    }
+
+    private ArrayList<Location> getSelectedNodesFromMapMapPane(){
+        ArrayList<Location> namesOfSelectNodes = new ArrayList<>();
+
+        for (Node node : mapPane.getChildren()) {
+            if (node instanceof Circle) {
+                if (((Circle) node).getFill().equals(Color.RED)) {
+                    String nodeName = node.getId().split(" = ")[0];
+                    namesOfSelectNodes.add(graph.getNode(nodeName));
+                }
+            }
+        }
+
+        return namesOfSelectNodes;
+    }
+
+
+
 
     private void loadMap(String strPath){
         if (strPath.isEmpty()){
@@ -307,6 +372,16 @@ public class PathFinder extends Application  {
         }
 
     }
+
+    // Graph methods ----
+
+    private void resetGraph(){
+        graph = new ListGraph<>();
+    }
+
+//    private void createConnection(Location 1, Location 2){
+
+ //   }
 
     public void loadLocationGraph(String fileName) {
         try {
@@ -395,18 +470,11 @@ public class PathFinder extends Application  {
     class NewMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
-            new NewMapHandler();
-            //lastEditIsSaved = false;  //FOR TESTING!!!!!!
             if (imageView.getImage() == null){ // ändra refactor baserat på boolean sats
                 loadMap("");
             } else {
-                // spara sats om ny data har lagts till. ATT GÖRA:
-                if (!lastEditIsSaved){
-                    controlSavedInstance(new NewMapHandler());
-                }
-                System.out.println("BEFORE" + graph.toString());
-                graph  = new ListGraph<Location>();
-                System.out.println("AFTER" + graph.toString());
+                resetGraph();
+                resetMapPane();
                 loadMap("");
             }
         }
@@ -423,12 +491,10 @@ public class PathFinder extends Application  {
     class OpenMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
-            //lastEditIsSaved = false;
-            //new OpenMapHandler();
+            resetGraph();
+            resetMapPane();
             String filePath = "./src/europa.graph";
             loadLocationGraph(filePath);
-            System.out.println(graph);
-            System.out.println("open");
             showAllNodes();
             drawAllConnections();
         }
@@ -471,6 +537,85 @@ public class PathFinder extends Application  {
         }
     }
 
+    class NewConnectionHandler implements EventHandler<ActionEvent> {
+
+        @Override
+        public void handle(ActionEvent event) {
+            //check if there is two nodes with red color
+            ArrayList<Location> selectedNodes = getSelectedNodesFromMapMapPane();
+            Location fromNode = selectedNodes.get(0);
+            Location toNode = selectedNodes.get(1);
+            // check if there exists two nodes
+
+            if (selectedNodes.size() != 2) {
+                // throw alert
+                Alert errorAlert = new Alert(AlertType.ERROR);
+                errorAlert.setTitle("Error!");
+                errorAlert.setContentText("Two places must be selected!");
+                return;
+            }
+            // check if connection already exists
+            if (!(graph.getEdgeBetween(fromNode, toNode) == null)) {
+                Alert errorAlert = new Alert(AlertType.ERROR);
+                errorAlert.setTitle("Error!");
+                errorAlert.setContentText("Places already have a connection");
+                return;
+            }
+
+            TextInputDialog tid = new TextInputDialog("");
+            tid.setTitle("Connection");
+            tid.setHeaderText("Connection from " + fromNode.getName() + " to " + toNode.getName());
+            tid.setContentText("Name:");
+            tid.setContentText("Time:");
+
+            tid.setHeight(230);
+            tid.setWidth(350);
+
+            GridPane grid = new GridPane();
+            TextField name = new TextField();
+            TextField time = new TextField();
+
+
+            grid.add(new Label("Name:  "), 0, 0);
+            grid.add(new Label("Time:  "), 0, 1);
+
+            grid.add(name, 1, 0);
+            grid.add(time, 1, 1);
+            grid.setAlignment(Pos.CENTER);
+
+            tid.getDialogPane().setContent(grid);
+
+
+
+            Optional<String> result = tid.showAndWait();
+            if (result.isPresent()) {
+                //if name textfield is not left blank and time textfield is an integer, create new connection
+                if (!name.getText().isEmpty()) {
+
+                    String nameOfConnection = name.getText();
+                    try {
+                        int timeOfConnection = Integer.parseInt(time.getText());
+
+
+                        graph.connect(fromNode, toNode, nameOfConnection, timeOfConnection);
+                        drawConnection(fromNode, toNode);
+                        graph.getNode(fromNode.getName()).getShape().setFill(Color.BLUE);
+                        graph.getNode(toNode.getName()).getShape().setFill(Color.BLUE);
+
+
+                    } catch (NumberFormatException e) {
+                        showErrorAlert("Time should be an integer");
+
+                    }
+                } else {
+                    showErrorAlert("Blank name is not allowed");
+
+                }
+
+            }
+
+        }
+    }
 }
 
 

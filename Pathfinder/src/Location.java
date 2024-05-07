@@ -19,6 +19,7 @@ public class Location extends Circle {
         this.y = y;
 
         shape = new Circle (x,y, 10.0);
+        shape.setId(this.toString());
         shape.setFill(Color.BLUE);
         // create a setOnMouseclick listener with custom eventhandler
         shape.setOnMouseClicked(new LocationOnClickHandler());
