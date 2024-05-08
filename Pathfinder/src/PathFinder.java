@@ -76,7 +76,6 @@ public class PathFinder extends Application  {
 
         // add container boxes to root node
         mapPane.getChildren().add(imageView);
-        instantiateMapPaneEventListener();
 
         root.getChildren().addAll(fileMenuBar, btnMenu, mapPane);
 
@@ -106,7 +105,6 @@ public class PathFinder extends Application  {
         menuNewMap.setOnAction(actionEvent -> {
             enableButtons();
             controlSavedInstance(new NewMapHandler());
-            instantiateMapPaneEventListener();
         });
 
         menuOpenFile.setOnAction(actionEvent -> {
@@ -154,7 +152,6 @@ public class PathFinder extends Application  {
                 handler.handle(Event);
                 newPlaceBtn.setDisable(false);
                 stage.getScene().setCursor(Cursor.DEFAULT);
-                mapPane.setOnMouseClicked(null);
             });
         });
 
@@ -176,27 +173,21 @@ public class PathFinder extends Application  {
     }
 
     private void instantiateMapPaneEventListener() {
-        System.out.println("instatiated new listener");
         mapPane.setOnMouseClicked(event -> {
-            System.out.println("Event Is Reacting");
             if ( event.getTarget() instanceof Circle ) {
-                System.out.println(event);
                 for (Node node : mapPane.getChildren()) {
                     if (node instanceof Circle) {
                         if (((Circle) node).getFill().equals(Color.RED)) {
                             String nodeName = node.getId().split(" = ")[0];
-                            // if graph is empty, create a new location object and add to graph.
                             Location currentLocation = graph.getNode(nodeName);
-                            System.out.println(currentLocation);
-                            selectedPlaces.add(graph.getNode(nodeName));
-                            System.out.println("added Location to arraylist: " + currentLocation);
-
+                            if (!selectedPlaces.contains(currentLocation)) {
+                                selectedPlaces.add(graph.getNode(nodeName));
+                            }
                         } else if (((Circle) node).getFill().equals(Color.BLUE)) {
                             String nodeName = node.getId().split(" = ")[0];
                             Location currentLocation = graph.getNode(nodeName);
                             if (selectedPlaces.contains(currentLocation)){
                                 selectedPlaces.remove(currentLocation);
-                                System.out.println("removed Location to arraylist: " + currentLocation);
                             }
                         }
                     }
@@ -521,6 +512,7 @@ public class PathFinder extends Application  {
             loadLocationGraph(filePath);
             showAllNodes();
             drawAllConnections();
+            instantiateMapPaneEventListener();
         }
     }
 
@@ -555,10 +547,13 @@ public class PathFinder extends Application  {
                     graph.add(location);
                     System.out.println("Current state of graph:" + graph);
                     showNode(location);
+                    instantiateMapPaneEventListener();
+
                     lastEditIsSaved = false;
                 }
             }
-            mapPane.setOnMouseClicked(null);
+
+
         }
     }
 
@@ -567,14 +562,15 @@ public class PathFinder extends Application  {
         @Override
         public void handle(ActionEvent event) {
             //check if there is two nodes with red color
-            ArrayList<Location> selectedNodes = getSelectedNodesFromMapMapPane();
-            //ArrayList<Location> selectedNodes = selectedPlaces;
-            Location fromNode = selectedNodes.get(0);
-            Location toNode = selectedNodes.get(1);
+            //ArrayList<Location> selectedNodes = getSelectedNodesFromMapMapPane();
+            System.out.println("NewConnection Handler is happening");
+            System.out.println(selectedPlaces);
+            Location fromNode = selectedPlaces.get(0);
+            Location toNode = selectedPlaces.get(1);
 
             // check if there exists two nodes
 
-            if (selectedNodes.size() != 2) {
+            if (selectedPlaces.size() != 2) {
                 // throw alert
                 Alert errorAlert = new Alert(AlertType.ERROR);
                 errorAlert.setTitle("Error!");
@@ -588,7 +584,6 @@ public class PathFinder extends Application  {
                 errorAlert.setContentText("Places already have a connection");
                 return;
             }
-
 
             // ------------------------
 
@@ -626,24 +621,19 @@ public class PathFinder extends Application  {
                     try {
                         int timeOfConnection = Integer.parseInt(time.getText());
 
-
                         graph.connect(fromNode, toNode, nameOfConnection, timeOfConnection);
                         drawConnection(fromNode, toNode);
                         graph.getNode(fromNode.getName()).getShape().setFill(Color.BLUE);
                         graph.getNode(toNode.getName()).getShape().setFill(Color.BLUE);
-
-
+                        lastEditIsSaved = false;
                     } catch (NumberFormatException e) {
                         showErrorAlert("Time should be an integer");
-
                     }
                 } else {
                     showErrorAlert("Blank name is not allowed");
 
                 }
-
             }
-
         }
     }
 }
