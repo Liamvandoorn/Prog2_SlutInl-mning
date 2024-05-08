@@ -671,8 +671,7 @@ public class PathFinder extends Application  {
                 BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
                 ImageIO.write(bufferedImage, "png", new File("capture.png"));
             }catch (IOException e){
-                Alert alert = new Alert(Alert.AlertType.ERROR,"IO-fel "+e.getMessage());
-                alert.showAndWait();
+                showErrorAlert("IO-error "+e.getMessage());
             }
         }
     }
