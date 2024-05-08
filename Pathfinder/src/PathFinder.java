@@ -54,7 +54,7 @@ public class PathFinder extends Application  {
     private Stage stage;
 
     private ListGraph<Location> graph = new ListGraph<Location>();
-
+    private ArrayList<Location> selectedPlaces = new ArrayList<Location>();
     private boolean lastEditIsSaved = true;
 
     private Button findPathBtn = new Button();
@@ -76,6 +76,8 @@ public class PathFinder extends Application  {
 
         // add container boxes to root node
         mapPane.getChildren().add(imageView);
+        instantiateMapPaneEventListener();
+
         root.getChildren().addAll(fileMenuBar, btnMenu, mapPane);
 
         Scene scene = new Scene (root, 618, 80);
@@ -104,6 +106,7 @@ public class PathFinder extends Application  {
         menuNewMap.setOnAction(actionEvent -> {
             enableButtons();
             controlSavedInstance(new NewMapHandler());
+            instantiateMapPaneEventListener();
         });
 
         menuOpenFile.setOnAction(actionEvent -> {
@@ -149,7 +152,6 @@ public class PathFinder extends Application  {
         mapPane.setOnMouseClicked(Event -> {
                 NewPlaceHandler handler = new NewPlaceHandler();
                 handler.handle(Event);
-
                 newPlaceBtn.setDisable(false);
                 stage.getScene().setCursor(Cursor.DEFAULT);
                 mapPane.setOnMouseClicked(null);
@@ -173,11 +175,40 @@ public class PathFinder extends Application  {
         btnMenu.setMinHeight(60);
     }
 
+    private void instantiateMapPaneEventListener() {
+        System.out.println("instatiated new listener");
+        mapPane.setOnMouseClicked(event -> {
+            System.out.println("Event Is Reacting");
+            if ( event.getTarget() instanceof Circle ) {
+                System.out.println(event);
+                for (Node node : mapPane.getChildren()) {
+                    if (node instanceof Circle) {
+                        if (((Circle) node).getFill().equals(Color.RED)) {
+                            String nodeName = node.getId().split(" = ")[0];
+                            // if graph is empty, create a new location object and add to graph.
+                            Location currentLocation = graph.getNode(nodeName);
+                            System.out.println(currentLocation);
+                            selectedPlaces.add(graph.getNode(nodeName));
+                            System.out.println("added Location to arraylist: " + currentLocation);
+
+                        } else if (((Circle) node).getFill().equals(Color.BLUE)) {
+                            String nodeName = node.getId().split(" = ")[0];
+                            Location currentLocation = graph.getNode(nodeName);
+                            if (selectedPlaces.contains(currentLocation)){
+                                selectedPlaces.remove(currentLocation);
+                                System.out.println("removed Location to arraylist: " + currentLocation);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Application specific method for checking if data is saved, should only be used if data has already been loaded.
      * If lastEditIsSaved is false, it will show alert specific for saving instance of application
      */
-
     private void enableButtons(){
         findPathBtn.setDisable(false);
         showConnectionBtn.setDisable(false);
@@ -230,10 +261,11 @@ public class PathFinder extends Application  {
         });
     }
 
-    private void showErrorAlert(String contextText){
+    private void showErrorAlert(String headerText){
         Alert errorAlert = new Alert(AlertType.ERROR);
         errorAlert.setTitle("Error!");
-        errorAlert.setContentText(contextText);
+
+        errorAlert.setHeaderText(headerText);
         errorAlert.showAndWait();
     }
 
@@ -295,7 +327,6 @@ public class PathFinder extends Application  {
 
     private ArrayList<Location> getSelectedNodesFromMapMapPane(){
         ArrayList<Location> namesOfSelectNodes = new ArrayList<>();
-
         for (Node node : mapPane.getChildren()) {
             if (node instanceof Circle) {
                 if (((Circle) node).getFill().equals(Color.RED)) {
@@ -304,12 +335,8 @@ public class PathFinder extends Application  {
                 }
             }
         }
-
         return namesOfSelectNodes;
     }
-
-
-
 
     private void loadMap(String strPath){
         if (strPath.isEmpty()){
@@ -319,6 +346,7 @@ public class PathFinder extends Application  {
         imageView.setImage(image);
         stage.setWidth(image.getWidth());
         stage.setHeight(image.getHeight() + stage.getHeight());
+        System.out.println("mapPane Dimension" + mapPane.getHeight() + " : " + mapPane.getWidth());
     }
 
     /**
@@ -378,10 +406,6 @@ public class PathFinder extends Application  {
     private void resetGraph(){
         graph = new ListGraph<>();
     }
-
-//    private void createConnection(Location 1, Location 2){
-
- //   }
 
     public void loadLocationGraph(String fileName) {
         try {
@@ -529,6 +553,7 @@ public class PathFinder extends Application  {
                     System.out.println(locationName);
                     Location location = new Location(locationName, xCoordinate, yCoordinate);
                     graph.add(location);
+                    System.out.println("Current state of graph:" + graph);
                     showNode(location);
                     lastEditIsSaved = false;
                 }
@@ -543,8 +568,10 @@ public class PathFinder extends Application  {
         public void handle(ActionEvent event) {
             //check if there is two nodes with red color
             ArrayList<Location> selectedNodes = getSelectedNodesFromMapMapPane();
+            //ArrayList<Location> selectedNodes = selectedPlaces;
             Location fromNode = selectedNodes.get(0);
             Location toNode = selectedNodes.get(1);
+
             // check if there exists two nodes
 
             if (selectedNodes.size() != 2) {
@@ -554,13 +581,16 @@ public class PathFinder extends Application  {
                 errorAlert.setContentText("Two places must be selected!");
                 return;
             }
-            // check if connection already exists
+            // check if connection already exist
             if (!(graph.getEdgeBetween(fromNode, toNode) == null)) {
                 Alert errorAlert = new Alert(AlertType.ERROR);
                 errorAlert.setTitle("Error!");
                 errorAlert.setContentText("Places already have a connection");
                 return;
             }
+
+
+            // ------------------------
 
             TextInputDialog tid = new TextInputDialog("");
             tid.setTitle("Connection");
@@ -589,7 +619,7 @@ public class PathFinder extends Application  {
 
             Optional<String> result = tid.showAndWait();
             if (result.isPresent()) {
-                //if name textfield is not left blank and time textfield is an integer, create new connection
+                //if name textfield is not left blank and time textfield is an integer, create new connection and draw on map
                 if (!name.getText().isEmpty()) {
 
                     String nameOfConnection = name.getText();
