@@ -252,7 +252,6 @@ public class PathFinder extends Application  {
     }
 
     private boolean isMapLoaded () {
-        System.out.println(imageView.getImage());
         if (imageView.getImage() != null) {
             return true;
         }
@@ -281,13 +280,12 @@ public class PathFinder extends Application  {
 
     // Setters: draw methods -----
 
-
     private void showNode(Location location) {
         try {
             // draw node on mapPane.
             mapPane.getChildren().add(location.getShape());
         } catch (Exception e) {
-            System.out.println(e);
+           // System.out.println(e);
         }
     }
 
@@ -317,9 +315,6 @@ public class PathFinder extends Application  {
         }
     }
 
-    /**
-     * Helper method, should only be used if graph has been saved or emptied
-     */
     private void resetMapPane(){
         // check if listgraph is empty
         if (graph.getNodes().isEmpty()){
@@ -333,7 +328,7 @@ public class PathFinder extends Application  {
                 }
             }
         } else {
-            System.out.println("Can't reset map since there's unsaved data");
+            //System.out.println("Can't reset map since there's unsaved data");
         }
     }
 
@@ -345,16 +340,9 @@ public class PathFinder extends Application  {
         imageView.setImage(image);
         stage.setWidth(image.getWidth());
         stage.setHeight(image.getHeight() + stage.getHeight());
-        System.out.println("mapPane Dimension" + mapPane.getHeight() + " : " + mapPane.getWidth());
+        //System.out.println("mapPane Dimension" + mapPane.getHeight() + " : " + mapPane.getWidth());
     }
 
-    /**
-     * Save method that consist of three parts
-     * {@code 1. write in gif path }
-     * {@code 2. write in the nodes }
-     * {@code 3. write in the connections }
-     * Should never be used if a data hasn't been loaded first
-     */
     private void saveMap() {
         try {
             FileWriter fw = new FileWriter("./PathFinder/src/europa.graph");
@@ -395,7 +383,7 @@ public class PathFinder extends Application  {
             fw.close();
             bw.close();
         } catch (IOException e){
-            System.out.println(e);
+            //System.out.println(e);
         }
 
     }
@@ -424,10 +412,10 @@ public class PathFinder extends Application  {
             br.close();
         } catch (FileNotFoundException e ){
             //return;
-            System.out.println("File not found: " + e);
+            //System.out.println("File not found: " + e);
         } catch (Exception e) {
             //return;
-            System.out.println("Exception:" + e);
+            //System.out.println("Exception:" + e);
         }
     }
 
@@ -454,18 +442,10 @@ public class PathFinder extends Application  {
                 graph.connect(from, to, name, weight);
             }
         } catch (IOException e) {
-            System.out.println(e);
+            //System.out.println(e);
         }
     }
 
-    private void saveImage(){
-
-    }
-    /**
-     * Void Helper method. Takes in a List of String that uses the index 0,1,2 to create what is needed to instantiate
-     * The location node
-     * @param listOfLocationStrings
-     */
     private void createLocationNodesFromList(List<String> listOfLocationStrings) {
         try {
             String locationName = "";
@@ -515,7 +495,7 @@ public class PathFinder extends Application  {
         alert.showAndWait().ifPresent(response -> {
 
             String btnText = response.getText();
-            System.out.println(btnText);
+            //System.out.println(btnText);
             if (btnText.equals("OK")) {
                 lastEditIsSaved = true;//FOR TESTING !!!!!!!
                 event.handle(new ActionEvent());
@@ -726,7 +706,7 @@ public class PathFinder extends Application  {
 
             double xCoordinate = event.getX();
             double yCoordinate = event.getY();
-            System.out.println(xCoordinate + ":" + yCoordinate);
+            //System.out.println(xCoordinate + ":" + yCoordinate);
 
             TextInputDialog tid = new TextInputDialog("");
             tid.setTitle("Name");
@@ -734,15 +714,11 @@ public class PathFinder extends Application  {
             tid.setContentText("Name of place:");
 
             Optional<String> result = tid.showAndWait();
-            System.out.println(result);
             if (result.isPresent()){
-                System.out.println(result);
                 if ( !result.get().isEmpty()){ // check for blankspaces
                     String locationName = result.get();
-                    System.out.println(locationName);
                     Location location = new Location(locationName, xCoordinate, yCoordinate);
                     graph.add(location);
-                    System.out.println("Current state of graph:" + graph);
                     showNode(location);
                     instantiateMapPaneEventListener();
 

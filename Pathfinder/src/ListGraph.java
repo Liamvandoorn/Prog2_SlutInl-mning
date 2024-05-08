@@ -1,6 +1,7 @@
 import java.util.*;
 import java.io.Serializable;
 
+
 /*
            ___,
           '._.'\
@@ -111,7 +112,8 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
         while (!current.equals(from)) {
             T next = map.get(current);
             Edge<T> edge = getEdgeBetween(current, next);
-            path.addFirst(edge);
+            path.add(0, edge);
+            //path.addFirst(edge);
             current = next;
         }
         return path;
