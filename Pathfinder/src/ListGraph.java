@@ -1,6 +1,5 @@
-import java.util.*;
 import java.io.Serializable;
-
+import java.util.*;
 
 /*
            ___,
@@ -60,14 +59,10 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
     }
 
     public Edge<T> getEdgeBetween(T node1, T node2){
-        System.out.println("1 nodes recieved: " + node1 + " : " + node2);
         validateNodeExistance(node1);
         validateNodeExistance(node2);
-        System.out.println("2" );
 
         for (Edge<T> edge : connectionMap.get(node1)){
-            System.out.println("3 Edge got ------");
-            System.out.println("Edge gotten: " + edge);
             if (edge.getDestination().equals(node2)){
                 return edge;
             }
@@ -119,14 +114,13 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
             //path.addFirst(edge);
             current = next;
         }
-        // fix minor bug discussed in lecture
-
+/*        System.out.println("::::::::::::" + path.getLast());
         Location lastLocation = (Location) path.getLast().getDestination();
         T lastLocationInPath = this.getNode(lastLocation.getName());
         Edge<T> lastConnection = this.getEdgeBetween(lastLocationInPath, to);
         path.addLast(lastConnection);
         path.remove(0);
-
+*/
         return path;
     }
 
@@ -170,17 +164,14 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
         if (weight < 0 ) {
             throw new IllegalArgumentException("Negative weight not allowed");
         }
-        System.out.println("2.1");
         //check if connection doesn't already exist between nodes else throw exception
         if(!(getEdgeBetween(node1, node2) == null)){
             throw new IllegalStateException("Connection does already exist between nodes");
         }
-        System.out.println("2.2");
 
         // create and add edges to nodes in graph
         connectionMap.get(node1).add(new Edge<>(node2, weight, name));
         connectionMap.get(node2).add(new Edge<>(node1, weight, name));
-        System.out.println("2.3");
     }
 
     public void disconnect(T node1, T node2){

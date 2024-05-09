@@ -259,6 +259,18 @@ public class PathFinder extends Application  {
 
     // Getters -------------------
 
+    private List<Edge<Location>> getPathListBetweenNodes(Location from, Location to){
+        List<Edge<Location>> path = graph.getPath(from, to);
+        if (path == null) {
+            showErrorAlert("No Path Found Between " + from.getName() + " to " + to.getName());
+            return null;
+        }
+        Location lastLocation = path.getLast().getDestination();
+        Edge<Location> lastConnection = graph.getEdgeBetween(lastLocation, to);
+        path.addLast(lastConnection);
+        return path;
+    }
+
     public boolean getLastEditIsSaved(){
         return lastEditIsSaved;
     }
@@ -398,6 +410,7 @@ public class PathFinder extends Application  {
             //read lines from textfile and split to retrieve information and create node
             FileReader fr = new FileReader(fileName);
             BufferedReader br = new BufferedReader(fr);
+
             // load first line into list
             String mapPath = br.readLine();
             String[] gifPath = mapPath.split(":");
@@ -407,7 +420,6 @@ public class PathFinder extends Application  {
             String[] tmp = br.readLine().split(";");
             List<String> listOfLocationStrings = Arrays.asList(tmp);
 
-            //
             createLocationNodesFromList(listOfLocationStrings);
             connectLocationNodes(br);
 
@@ -508,18 +520,16 @@ public class PathFinder extends Application  {
         });
     }
 
-    private void showPathInformationAlert(Location from, Location to) {
-        List<Edge<Location>> path = graph.getPath(from, to);
-        System.out.println(path);
-        if (path == null) {
-            showErrorAlert("No Path Found Between " + from.getName() + " to " + to.getName());
-            return;
-        }
+    private void showPathInformationAlert(List<Edge<Location>> path) {
+        Location from = path.getFirst().getDestination();
+        Location to = path.getLast().getDestination();
+        path.remove(0); // we do not include the starting point to itself as a step.
+
+        // instantiate the grid and text area that contains path content
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Message");
         alert.setHeaderText("The Path From " + from.getName() + " to " + to.getName());
 
-        // instantiate the grid and text area that contains path content
         GridPane grid = new GridPane();
         TextArea textArea = new TextArea();
         textArea.setEditable(false);
@@ -639,7 +649,7 @@ public class PathFinder extends Application  {
         public void handle(ActionEvent event){
             resetGraph();
             resetMapPane();
-            String filePath = "./src/europa.graph";
+            String filePath = "./Pathfinder/src/europa.graph";
             loadLocationGraph(filePath);
             showAllNodes();
             drawAllConnections();
@@ -679,7 +689,11 @@ public class PathFinder extends Application  {
 
             Location fromNode = selectedPlaces.get(0);
             Location toNode = selectedPlaces.get(1);
-            showPathInformationAlert(fromNode, toNode);
+            List<Edge<Location>> path = getPathListBetweenNodes(fromNode, toNode);
+
+            if (path != null ){
+                showPathInformationAlert(path);
+            }
         }
     }
 
