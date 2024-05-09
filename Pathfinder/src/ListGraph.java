@@ -15,7 +15,7 @@ import java.io.Serializable;
        `----`
 */
 
-public class ListGraph <T> implements Graph<T>, Serializable { // T stands for objects used as Nodes.
+public class ListGraph<T> implements Graph<T>, Serializable { // T stands for objects used as Nodes.
 
     // Attributes :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // Node : list[Edges, Edges, Edges] //
@@ -60,10 +60,14 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
     }
 
     public Edge<T> getEdgeBetween(T node1, T node2){
+        System.out.println("1 nodes recieved: " + node1 + " : " + node2);
         validateNodeExistance(node1);
         validateNodeExistance(node2);
+        System.out.println("2" );
 
         for (Edge<T> edge : connectionMap.get(node1)){
+            System.out.println("3 Edge got ------");
+            System.out.println("Edge gotten: " + edge);
             if (edge.getDestination().equals(node2)){
                 return edge;
             }
@@ -96,7 +100,6 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
                     queue.add(destinatedNode);
                 }
             }
-
         }
         if (!connections.containsKey(to)) {
             return null;
@@ -116,14 +119,19 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
             //path.addFirst(edge);
             current = next;
         }
+        // fix minor bug discussed in lecture
+
+        Location lastLocation = (Location) path.getLast().getDestination();
+        T lastLocationInPath = this.getNode(lastLocation.getName());
+        Edge<T> lastConnection = this.getEdgeBetween(lastLocationInPath, to);
+        path.addLast(lastConnection);
+        path.remove(0);
+
         return path;
     }
 
 
     // Setters :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-
-
     private void validateNodeExistance(T node){
         if (!connectionMap.containsKey(node)) {
             throw new NoSuchElementException("Given node doesn't exist in ListGraph: " + node.toString());
@@ -135,7 +143,6 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
             throw new IllegalStateException("Connections doesn't exists between nodes");
         }
     }
-
 
     public void add(T node){
         connectionMap.putIfAbsent(node, new ArrayList<>());
@@ -163,15 +170,17 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
         if (weight < 0 ) {
             throw new IllegalArgumentException("Negative weight not allowed");
         }
-
+        System.out.println("2.1");
         //check if connection doesn't already exist between nodes else throw exception
         if(!(getEdgeBetween(node1, node2) == null)){
             throw new IllegalStateException("Connection does already exist between nodes");
         }
+        System.out.println("2.2");
 
         // create and add edges to nodes in graph
         connectionMap.get(node1).add(new Edge<>(node2, weight, name));
-        //connectionMap.get(node2).add(new Edge<>(node1, weight, name));
+        connectionMap.get(node2).add(new Edge<>(node1, weight, name));
+        System.out.println("2.3");
     }
 
     public void disconnect(T node1, T node2){
@@ -191,7 +200,6 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
         validateNodeExistance(node1);
         validateNodeExistance(node2);
 
-
         //check if weight is positive else throw exception
         if (weight < 0 ) {
             throw new IllegalArgumentException("Negative weight not allowed");
@@ -199,7 +207,6 @@ public class ListGraph <T> implements Graph<T>, Serializable { // T stands for o
 
         //check if connection exist between nodes else throw exception
         validateConnectionBetweenNodes(node1, node2);
-
 
         // get the edge between node1 and node2
         Edge<T> edgeBetween1to2 = getEdgeBetween(node1, node2);

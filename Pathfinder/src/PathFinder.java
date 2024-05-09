@@ -27,7 +27,6 @@ import javafx.scene.Node;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.sql.Connection;
 import java.util.*;
 import java.util.List;
 
@@ -401,10 +400,14 @@ public class PathFinder extends Application  {
             BufferedReader br = new BufferedReader(fr);
             // load first line into list
             String mapPath = br.readLine();
-            String[] a = mapPath.split(":");
-            loadMap(a[1]);
+            String[] gifPath = mapPath.split(":");
+            loadMap(gifPath[1]);
+
+            // read all nodes
             String[] tmp = br.readLine().split(";");
             List<String> listOfLocationStrings = Arrays.asList(tmp);
+
+            //
             createLocationNodesFromList(listOfLocationStrings);
             connectLocationNodes(br);
 
@@ -507,6 +510,7 @@ public class PathFinder extends Application  {
 
     private void showPathInformationAlert(Location from, Location to) {
         List<Edge<Location>> path = graph.getPath(from, to);
+        System.out.println(path);
         if (path == null) {
             showErrorAlert("No Path Found Between " + from.getName() + " to " + to.getName());
             return;
@@ -635,7 +639,7 @@ public class PathFinder extends Application  {
         public void handle(ActionEvent event){
             resetGraph();
             resetMapPane();
-            String filePath = "./Pathfinder/src/europa.graph";
+            String filePath = "./src/europa.graph";
             loadLocationGraph(filePath);
             showAllNodes();
             drawAllConnections();
