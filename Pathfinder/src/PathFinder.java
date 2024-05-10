@@ -272,12 +272,10 @@ public class PathFinder extends Application  {
             showErrorAlert("No Path Found Between " + from.getName() + " to " + to.getName());
             return null;
         }
-        int lastIndex = path.size() - 1;
-        Location lastLocation = path.get(lastIndex).getDestination();
-        Edge<Location> lastConnection = graph.getEdgeBetween(lastLocation, to);
-        path.add(lastIndex + 1, lastConnection);
         return path;
+
     }
+
 
     public boolean getLastEditIsSaved(){
         return lastEditIsSaved;
@@ -285,9 +283,10 @@ public class PathFinder extends Application  {
 
     // Setters -------------------
     private void emptySelectedPlaces () {
-        //Location tmp = selectedPlaces.getFirst();
-        Location tmp = selectedPlaces.get(0);
-        tmp.setNmbrOfRedCirclesZero();
+        if (!(selectedPlaces.isEmpty())){
+            Location tmp = selectedPlaces.get(0);
+            tmp.setNmbrOfRedCirclesZero();
+        }
         selectedPlaces = new ArrayList<Location>();
     }
 
@@ -305,7 +304,7 @@ public class PathFinder extends Application  {
     private void showNode(Location location) {
         try {
             // draw node on mapPane.
-            outputArea.getChildren().addAll(location.getShape(), location.getPlaceLabel());
+            outputArea.getChildren().addAll(location, location.getPlaceLabel());
         } catch (Exception e) {
         }
     }
@@ -322,17 +321,22 @@ public class PathFinder extends Application  {
         ArrayList<Double> toXY = to.getCoordinates();
 
         Line line = new Line(fromXY.get(0), fromXY.get(1), toXY.get(0), toXY.get(1));
+        line.setDisable(true);
         line.setMouseTransparent(true); // demo wants it to be shown above the circles but still clickable
         outputArea.getChildren().add(line);
     }
 
     private void drawAllConnections() {
         // for each node in graph
-        for (Location location : graph.getNodes()) {
-            // Get edges
-            for (Edge edge : graph.getEdgesFrom(location)) {
-                drawConnection(location, (Location) edge.getDestination());
+        try {
+            for (Location location : graph.getNodes()) {
+                // Get edges
+                for (Edge edge : graph.getEdgesFrom(location)) {
+                    drawConnection(location, (Location) edge.getDestination());
+                }
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e + "hello im crashing");
         }
     }
 
@@ -352,9 +356,12 @@ public class PathFinder extends Application  {
     }
 
     private void loadMap(String strPath){
-        if (strPath.isEmpty()){
-            strPath = "europa.gif";
+        /*if (strPath.isEmpty()){
+            //strPath = "europa.gif";
+            strPath = "karta.png";
         }
+
+         */
         Image image = new Image(strPath);
         imageView.setImage(image);
         stage.setWidth(image.getWidth());
@@ -367,10 +374,12 @@ public class PathFinder extends Application  {
 
     private void saveMap() {
         try {
-            FileWriter fw = new FileWriter("./src/europa.graph");
+            FileWriter fw = new FileWriter("europa.graph");
             BufferedWriter bw = new BufferedWriter(fw);
-            // write in gif path
-            bw.write("file:europa.gif\n");
+            // write in image name from path
+            String[] fullURL = imageView.getImage().getUrl().split("/");
+            String imageURL = fullURL[fullURL.length-1];
+            bw.write("file:"+ imageURL + "\n");
 
             Set<Location> nodes = graph.getNodes();
             Iterator<Location> setIterator = nodes.iterator();
@@ -438,7 +447,6 @@ public class PathFinder extends Application  {
         } catch (FileNotFoundException e ){
 
         } catch (Exception e) {
-
         }
     }
 
@@ -531,8 +539,7 @@ public class PathFinder extends Application  {
 
     private void showPathInformationAlert(List<Edge<Location>> path) {
         Location from = path.get(0).getDestination();
-        Location to = path.get(path.size() - 1).getDestination();
-        path.remove(0); // we do not include the starting point to itself as a step.
+        Location to = path.get(path.size()-1).getDestination();
 
         // instantiate the grid and text area that contains path content
         Alert alert = new Alert(AlertType.INFORMATION);
@@ -622,7 +629,7 @@ public class PathFinder extends Application  {
                     }
                     graph.connect(from, to, nameOfConnection, timeOfConnection);
                     drawConnection(from, to);
-                    unSelectAllPlaces();
+                    //unSelectAllPlaces();
                 } catch (NumberFormatException e) {
                     showErrorAlert("Time should be an integer");
                 }
@@ -640,11 +647,12 @@ public class PathFinder extends Application  {
         @Override
         public void handle(ActionEvent event){
             if (imageView.getImage() == null){ // ändra refactor baserat på boolean sats
-                loadMap("");
+                loadMap("europa.gif");
             } else {
                 resetGraph();
                 resetMapPane();
-                loadMap("");
+                loadMap("europa.gif");
+                emptySelectedPlaces();
             }
         }
     }
@@ -660,13 +668,14 @@ public class PathFinder extends Application  {
     class OpenMapHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
-            resetGraph();
-            resetMapPane();
-            String filePath = "./src/europa.graph";
-            loadLocationGraph(filePath);
-            showAllNodes();
+            resetGraph(); // Check
+            resetMapPane(); // Check
+            String filePath = "europa.graph";
+            loadLocationGraph(filePath); // Check
+            showAllNodes();  // Check
             drawAllConnections();
             instantiateOutputAreaEventListener();
+            emptySelectedPlaces();
         }
     }
 

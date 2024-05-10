@@ -1,3 +1,10 @@
+// PROG2 VT2024, Inlämningsuppgift, del 2
+// Grupp 76
+// Liam vandoorn liva4190
+// Andreas Johansson anjo9645
+
+import javafx.scene.shape.Circle;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -105,22 +112,15 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
     private List<Edge<T>> buildPathFromMap(Map<T,T> map, T from, T to) {
         ArrayList<Edge<T>> path = new ArrayList<>();
         T current = to;
-
         // iterate through map
         while (!current.equals(from)) {
             T next = map.get(current);
-            Edge<T> edge = getEdgeBetween(current, next);
+            Edge<T> edge = getEdgeBetween(next, current);
             path.add(0, edge);
             //path.addFirst(edge);
             current = next;
         }
-/*        System.out.println("::::::::::::" + path.getLast());
-        Location lastLocation = (Location) path.getLast().getDestination();
-        T lastLocationInPath = this.getNode(lastLocation.getName());
-        Edge<T> lastConnection = this.getEdgeBetween(lastLocationInPath, to);
-        path.addLast(lastConnection);
-        path.remove(0);
-*/
+
         return path;
     }
 
@@ -128,8 +128,16 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
     // Setters :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     private void validateNodeExistance(T node){
         if (!connectionMap.containsKey(node)) {
-            throw new NoSuchElementException("Given node doesn't exist in ListGraph: " + node.toString());
+            // debugging VPL
+            throw new NoSuchElementException("Given node doesn't exist in ListGraph: " +
+                    node.toString() +
+                    "\n" +
+                    "ConnectionMap: " + connectionMap +
+                    "\n Connectionmap finds node: " +
+                    connectionMap.get(node)
+            );
         }
+
     }
 
     private void validateConnectionBetweenNodes(T node1, T node2){
@@ -171,7 +179,7 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
 
         // create and add edges to nodes in graph
         connectionMap.get(node1).add(new Edge<>(node2, weight, name));
-        //connectionMap.get(node2).add(new Edge<>(node1, weight, name));
+        connectionMap.get(node2).add(new Edge<>(node1, weight, name));
     }
 
     public void disconnect(T node1, T node2){

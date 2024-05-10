@@ -20,7 +20,7 @@ import java.util.Objects;
 public class Location extends Circle{
     private final String name;
     private final double x, y;
-    private Shape shape;
+    //private Shape shape;
     private final Label placeLabel;
     private static int nmbrOfRedCircles;
 
@@ -28,13 +28,19 @@ public class Location extends Circle{
         this.name = name;
         this.x = x;
         this.y = y;
+        this.setRadius(10.0);
+        this.setLayoutX(x);
+        this.setLayoutY(y);
 
-        shape = new Circle (x,y, 10.0);
-        shape.setId(this.getName());
-        shape.setFill(Color.BLUE);
+        this.setId(this.getName());
+        this.setFill(Color.BLUE);
 
         // create a setOnMouseclick listener with custom eventhandler
-        shape.setOnMouseClicked(new LocationOnClickHandler());
+        //shape.setOnMouseClicked(new LocationOnClickHandler());
+        this.setOnMouseClicked(event -> {
+            LocationOnClickHandler handler = new LocationOnClickHandler();
+            handler.handle(event);
+        });
 
         placeLabel = new Label(name);
         placeLabel.setLayoutX(x + 1);
@@ -47,14 +53,14 @@ public class Location extends Circle{
     private class LocationOnClickHandler implements EventHandler<MouseEvent> {
         @Override
         public void handle(MouseEvent event){
-
-            Paint color = shape.getFill();
+            Location target = (Location) event.getTarget();
+            Paint color = target.getFill();
 
             if (color.equals(Color.BLUE) && nmbrOfRedCircles < 2){
-                shape.setFill(Color.RED);
+                target.setFill(Color.RED);
                 nmbrOfRedCircles += 1;
             } else if (color.equals(Color.RED)) {
-                shape.setFill(Color.BLUE);
+                target.setFill(Color.BLUE);
                 nmbrOfRedCircles -= 1;
             }
         }
@@ -64,7 +70,7 @@ public class Location extends Circle{
         nmbrOfRedCircles = 0;
     }
 
-    public Shape getShape() {return shape;}
+    //public Shape getShape() {return shape;}
 
     public ArrayList<Double> getCoordinates(){
         ArrayList<Double> xy = new ArrayList<Double>();
