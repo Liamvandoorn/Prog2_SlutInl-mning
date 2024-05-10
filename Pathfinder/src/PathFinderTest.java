@@ -1,5 +1,5 @@
-/*
 
+/*
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.FxRobot;
 import org.testfx.api.FxRobotException;
-import org.testfx.api.FxToolkit;
+import org.testfx.api.FxToolkit;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.util.WaitForAsyncUtils;
 
@@ -1075,4 +1075,6 @@ class PathFinderTest {
         INIT, IDS, TITLE, NEW_MAP, NEW_PLACE, NEW_CONN, OPEN, SAVE, SAVE_IMG, FIND_PATH, SHOW_CONN, CHG_CONN, EXIT
     }
 }
-*/
+
+ */
+

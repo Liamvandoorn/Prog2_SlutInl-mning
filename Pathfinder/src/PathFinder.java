@@ -4,7 +4,6 @@
 // Andreas Johansson anjo9645
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -17,6 +16,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
@@ -30,11 +30,13 @@ import javafx.scene.shape.Line;
 import javafx.scene.Node;
 
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
 import java.util.List;
 
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.shape.Circle;
 
@@ -106,8 +108,9 @@ public class PathFinder extends Application  {
         //top corner close button
         stage.setOnCloseRequest(actionEvent -> {
             controlSavedInstance(new CloseAppHandler());
+            CloseAppHandler handler = new CloseAppHandler();
             actionEvent.consume();
-            //Platform.exit();
+
         });
 
         menuNewMap.setOnAction(actionEvent -> {
@@ -521,9 +524,15 @@ public class PathFinder extends Application  {
     }
 
     private void showSaveAlert(EventHandler<ActionEvent> event) {
+
         Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.initModality(Modality.APPLICATION_MODAL); // weird modality test issue, added this because that's what the tests evaluates.
         alert.setTitle("Warning!");
-        alert.setHeaderText("Unsaved changes, continue anyway?");
+       // alert.setHeaderText("Unsaved changes, continue anyway?");
+        System.out.println("Alert modality " + alert.getModality());
+        System.out.println("BEFORE Stage modality " + stage.getModality());
+
+        alert.setContentText("Unsaved changes, continue anyway?");
         alert.showAndWait().ifPresent(response -> {
 
             String btnText = response.getText();
@@ -654,6 +663,7 @@ public class PathFinder extends Application  {
                 loadMap("europa.gif");
                 emptySelectedPlaces();
             }
+            lastEditIsSaved = false;
         }
     }
 
@@ -695,7 +705,9 @@ public class PathFinder extends Application  {
     class CloseAppHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event){
-            Platform.exit();
+            //Platform.exit();
+            //stage.close();
+            //stage.hide();
         }
     }
 

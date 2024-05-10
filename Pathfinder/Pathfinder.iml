@@ -9,5 +9,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="javafx.base" level="project" />
     <orderEntry type="library" name="junit.jupiter" level="project" />
+    <orderEntry type="library" name="testfx.junit5" level="project" />
+    <orderEntry type="library" name="testfx.core" level="project" />
   </component>
 </module>
