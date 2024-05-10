@@ -171,7 +171,7 @@ public class ListGraph<T> implements Graph<T>, Serializable { // T stands for ob
 
         // create and add edges to nodes in graph
         connectionMap.get(node1).add(new Edge<>(node2, weight, name));
-        connectionMap.get(node2).add(new Edge<>(node1, weight, name));
+        //connectionMap.get(node2).add(new Edge<>(node1, weight, name));
     }
 
     public void disconnect(T node1, T node2){

@@ -1,3 +1,8 @@
+// PROG2 VT2024, Inlämningsuppgift, del 2
+// Grupp 76
+// Liam vandoorn liva4190
+// Andreas Johansson anjo9645
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
@@ -35,7 +40,6 @@ import javafx.scene.shape.Circle;
 
 import javax.imageio.ImageIO;
 
-
 /**
  * Application app
  * Contains:
@@ -51,7 +55,7 @@ public class PathFinder extends Application  {
     private final MenuBar fileMenuBar = new MenuBar();
     private final HBox btnMenu = new HBox(20); // MN: pixel spacing between components within menu
     private final ImageView imageView = new ImageView();
-    private Pane mapPane = new Pane();
+    private Pane outputArea = new Pane();
     private Stage stage;
 
     private ListGraph<Location> graph = new ListGraph<Location>();
@@ -72,14 +76,16 @@ public class PathFinder extends Application  {
     public void start(Stage primaryStage){
         this.stage = primaryStage;
         VBox root = new VBox();
+        outputArea = new Pane();
+        outputArea.setId("outputArea");
 
         inializeFileMenu();
         initalizeBtnMenu();
 
         // add container boxes to root node
-        mapPane.getChildren().add(imageView);
+        outputArea.getChildren().add(imageView);
 
-        root.getChildren().addAll(fileMenuBar, btnMenu, mapPane);
+        root.getChildren().addAll(fileMenuBar, btnMenu, outputArea);
 
         Scene scene = new Scene (root, 618, 80);
         primaryStage.setScene(scene);
@@ -105,12 +111,12 @@ public class PathFinder extends Application  {
         });
 
         menuNewMap.setOnAction(actionEvent -> {
-            enableButtons();
+            disableButtons(false);
             controlSavedInstance(new NewMapHandler());
         });
 
         menuOpenFile.setOnAction(actionEvent -> {
-            enableButtons();
+            disableButtons(false);
             controlSavedInstance(new OpenMapHandler());
         });
 
@@ -125,12 +131,11 @@ public class PathFinder extends Application  {
             controlSavedInstance(new CloseAppHandler());
         });
 
-
         fileMenuBar.setId("menu");
         fileMenu.setId("menuFile");
         menuNewMap.setId("menuNewMap");
         menuOpenFile.setId("menuOpenFile");
-        menuSave.setId("menuSave");
+        menuSave.setId("menuSaveFile");
         menuSaveImage.setId("menuSaveImage");
         menuExit.setId("menuExit");
 
@@ -143,13 +148,18 @@ public class PathFinder extends Application  {
         newPlaceBtn = new Button("New place");
         newConnectionBtn = new Button("New Connection");
         changeConnectionBtn = new Button("Change Connection");
+        setButtonIds();
+        disableButtons(true);
+        instantiateMenuBtnListeners();
 
-        findPathBtn.setDisable(true);
-        showConnectionBtn.setDisable(true);
-        newPlaceBtn.setDisable(true);
-        newConnectionBtn.setDisable(true);
-        changeConnectionBtn.setDisable(true);
+        btnMenu.getChildren().addAll(findPathBtn, showConnectionBtn, newPlaceBtn, newConnectionBtn, changeConnectionBtn);
+        btnMenu.setAlignment(Pos.CENTER);
+        btnMenu.setMinHeight(60);
+    }
 
+    // Instantiate Listeners------
+
+    private void instantiateMenuBtnListeners() {
         findPathBtn.setOnAction(actionEvent -> {
             FindPathHandler handler = new FindPathHandler();
             handler.handle(actionEvent);
@@ -163,7 +173,7 @@ public class PathFinder extends Application  {
             newPlaceBtn.setDisable(true);
             stage.getScene().setCursor(Cursor.CROSSHAIR);
 
-            mapPane.setOnMouseClicked(mouseEvent -> {
+            outputArea.setOnMouseClicked(mouseEvent -> {
                 NewPlaceHandler handler = new NewPlaceHandler();
                 handler.handle(mouseEvent);
                 newPlaceBtn.setDisable(false);
@@ -179,24 +189,12 @@ public class PathFinder extends Application  {
             handler.handle(actionEvent);
         });
 
-        btnMenu.setId("btnMenu");
-        findPathBtn.setId("btnFindPath");
-        showConnectionBtn.setId("btnShowConnection");
-        newPlaceBtn.setId("btnNewPlace");
-        newConnectionBtn.setId("btnNewConnection");
-        changeConnectionBtn.setId("btnChangeConnection");
-
-        btnMenu.getChildren().addAll(findPathBtn, showConnectionBtn, newPlaceBtn, newConnectionBtn, changeConnectionBtn);
-        btnMenu.setAlignment(Pos.CENTER);
-        btnMenu.setMinHeight(60);
     }
 
-    // Instantiate Listeners------
-
-    private void instantiateMapPaneEventListener() {
-        mapPane.setOnMouseClicked(event -> {
+    private void instantiateOutputAreaEventListener() {
+        outputArea.setOnMouseClicked(event -> {
             if ( event.getTarget() instanceof Circle ) {
-                for (Node node : mapPane.getChildren()) {
+                for (Node node : outputArea.getChildren()) {
                     if (node instanceof Circle) {
                         if (((Circle) node).getFill().equals(Color.RED)) {
                             String nodeName = node.getId().split(" = ")[0];
@@ -220,13 +218,6 @@ public class PathFinder extends Application  {
      * Application specific method for checking if data is saved, should only be used if data has already been loaded.
      * If lastEditIsSaved is false, it will show alert specific for saving instance of application
      */
-    private void enableButtons(){
-        findPathBtn.setDisable(false);
-        showConnectionBtn.setDisable(false);
-        newPlaceBtn.setDisable(false);
-        newConnectionBtn.setDisable(false);
-        changeConnectionBtn.setDisable(false);
-    }
 
     private void controlSavedInstance(EventHandler<ActionEvent> event){
         if (!lastEditIsSaved) {
@@ -236,7 +227,23 @@ public class PathFinder extends Application  {
         }
     }
 
+    // Buttons
+    private void disableButtons(boolean bool){
+        findPathBtn.setDisable(bool);
+        showConnectionBtn.setDisable(bool);
+        newPlaceBtn.setDisable(bool);
+        newConnectionBtn.setDisable(bool);
+        changeConnectionBtn.setDisable(bool);
+    }
 
+    private void setButtonIds() {
+        btnMenu.setId("btnMenu");
+        findPathBtn.setId("btnFindPath");
+        showConnectionBtn.setId("btnShowConnection");
+        newPlaceBtn.setId("btnNewPlace");
+        newConnectionBtn.setId("btnNewConnection");
+        changeConnectionBtn.setId("btnChangeConnection");
+    }
     // checkers ------------------
 
     private boolean isTwoPlacesSelected() {
@@ -265,9 +272,10 @@ public class PathFinder extends Application  {
             showErrorAlert("No Path Found Between " + from.getName() + " to " + to.getName());
             return null;
         }
-        Location lastLocation = path.getLast().getDestination();
+        int lastIndex = path.size() - 1;
+        Location lastLocation = path.get(lastIndex).getDestination();
         Edge<Location> lastConnection = graph.getEdgeBetween(lastLocation, to);
-        path.addLast(lastConnection);
+        path.add(lastIndex + 1, lastConnection);
         return path;
     }
 
@@ -277,12 +285,15 @@ public class PathFinder extends Application  {
 
     // Setters -------------------
     private void emptySelectedPlaces () {
+        //Location tmp = selectedPlaces.getFirst();
+        Location tmp = selectedPlaces.get(0);
+        tmp.setNmbrOfRedCirclesZero();
         selectedPlaces = new ArrayList<Location>();
     }
 
     private void unSelectAllPlaces() {
         emptySelectedPlaces();
-        for (Node shape : mapPane.getChildren()) {
+        for (Node shape : outputArea.getChildren()) {
             if (shape instanceof Circle) {
                 ((Circle) shape).setFill(Color.BLUE);
             }
@@ -294,9 +305,8 @@ public class PathFinder extends Application  {
     private void showNode(Location location) {
         try {
             // draw node on mapPane.
-            mapPane.getChildren().add(location.getShape());
+            outputArea.getChildren().addAll(location.getShape(), location.getPlaceLabel());
         } catch (Exception e) {
-           // System.out.println(e);
         }
     }
 
@@ -307,13 +317,13 @@ public class PathFinder extends Application  {
     }
 
     private void drawConnection(Location from, Location to) {
-        // issue, they are above the circle, blocking the clickable area, maybe adjust it somehow
+
         ArrayList<Double> fromXY = from.getCoordinates();
         ArrayList<Double> toXY = to.getCoordinates();
 
         Line line = new Line(fromXY.get(0), fromXY.get(1), toXY.get(0), toXY.get(1));
         line.setMouseTransparent(true); // demo wants it to be shown above the circles but still clickable
-        mapPane.getChildren().add(line);
+        outputArea.getChildren().add(line);
     }
 
     private void drawAllConnections() {
@@ -329,17 +339,15 @@ public class PathFinder extends Application  {
     private void resetMapPane(){
         // check if listgraph is empty
         if (graph.getNodes().isEmpty()){
-            List<Node> copyOfChildren = new ArrayList<Node>(mapPane.getChildren());
+            List<Node> copyOfChildren = new ArrayList<Node>(outputArea.getChildren());
 
             for (Node node : copyOfChildren) {
-                if (node instanceof Circle) {
-                    mapPane.getChildren().remove(node);
-                } else if (node instanceof Line) {
-                    mapPane.getChildren().remove(node);
+                if (!(node instanceof ImageView)){
+                    outputArea.getChildren().remove(node);
                 }
             }
         } else {
-            //System.out.println("Can't reset map since there's unsaved data");
+            // removed out print here
         }
     }
 
@@ -350,13 +358,16 @@ public class PathFinder extends Application  {
         Image image = new Image(strPath);
         imageView.setImage(image);
         stage.setWidth(image.getWidth());
-        stage.setHeight(image.getHeight() + stage.getHeight());
-        //System.out.println("mapPane Dimension" + mapPane.getHeight() + " : " + mapPane.getWidth());
+
+        // if  is not more than say intial application height
+        if ( stage.getHeight() <= 120 ) {
+            stage.setHeight(image.getHeight() + stage.getHeight());
+        }
     }
 
     private void saveMap() {
         try {
-            FileWriter fw = new FileWriter("./PathFinder/src/europa.graph");
+            FileWriter fw = new FileWriter("./src/europa.graph");
             BufferedWriter bw = new BufferedWriter(fw);
             // write in gif path
             bw.write("file:europa.gif\n");
@@ -394,7 +405,7 @@ public class PathFinder extends Application  {
             fw.close();
             bw.close();
         } catch (IOException e){
-            //System.out.println(e);
+
         }
 
     }
@@ -422,15 +433,12 @@ public class PathFinder extends Application  {
 
             createLocationNodesFromList(listOfLocationStrings);
             connectLocationNodes(br);
-
             fr.close();
             br.close();
         } catch (FileNotFoundException e ){
-            //return;
-            //System.out.println("File not found: " + e);
+
         } catch (Exception e) {
-            //return;
-            //System.out.println("Exception:" + e);
+
         }
     }
 
@@ -447,17 +455,18 @@ public class PathFinder extends Application  {
 
             String line;
             while ((line = br.readLine()) != null) {
-                String[] connectionParts = line.split(";");
-
-                Location from = nodeMap.get(connectionParts[0]);
-                Location to = nodeMap.get(connectionParts[1]);
-                String name = connectionParts[2];
-                int weight = Integer.parseInt(connectionParts[3]);
-
-                graph.connect(from, to, name, weight);
+                try {
+                    String[] connectionParts = line.split(";");
+                    Location from = nodeMap.get(connectionParts[0]);
+                    Location to = nodeMap.get(connectionParts[1]);
+                    String name = connectionParts[2];
+                    int weight = Integer.parseInt(connectionParts[3]);
+                    graph.connect(from, to, name, weight);
+                } catch (Exception e) {
+                    //System.out.println(e);
+                }
             }
         } catch (IOException e) {
-            //System.out.println(e);
         }
     }
 
@@ -521,8 +530,8 @@ public class PathFinder extends Application  {
     }
 
     private void showPathInformationAlert(List<Edge<Location>> path) {
-        Location from = path.getFirst().getDestination();
-        Location to = path.getLast().getDestination();
+        Location from = path.get(0).getDestination();
+        Location to = path.get(path.size() - 1).getDestination();
         path.remove(0); // we do not include the starting point to itself as a step.
 
         // instantiate the grid and text area that contains path content
@@ -535,7 +544,9 @@ public class PathFinder extends Application  {
         textArea.setEditable(false);
 
         StringBuilder builder = new StringBuilder();
+        int total = 0;
         for (Edge<Location> connection : path) {
+            total += connection.getWeight();
             builder
                     .append("to ")
                     .append(connection.getDestination().getName())
@@ -545,9 +556,10 @@ public class PathFinder extends Application  {
                     .append(connection.getWeight())
                     .append("\n");
         }
+
         builder
                 .append("Total ")
-                .append(path.size());
+                .append(total);
 
         textArea.setText(builder.toString());
         grid.add(textArea, 0,0);
@@ -572,6 +584,7 @@ public class PathFinder extends Application  {
         TextField time = new TextField();
 
         Edge connection = graph.getEdgeBetween(from, to);
+
 
         time.setDisable(weightIsNotAdjustable);
         name.setDisable(nameIsNotAdjustable);
@@ -639,8 +652,8 @@ public class PathFinder extends Application  {
     class SaveHandler implements EventHandler<ActionEvent>{
         @Override
         public void handle(ActionEvent event) {
-            //saveMap();
-            lastEditIsSaved = false; //FOR TESTING !!!!!
+            saveMap();
+            lastEditIsSaved = true;
         }
     }
 
@@ -649,11 +662,11 @@ public class PathFinder extends Application  {
         public void handle(ActionEvent event){
             resetGraph();
             resetMapPane();
-            String filePath = "./Pathfinder/src/europa.graph";
+            String filePath = "./src/europa.graph";
             loadLocationGraph(filePath);
             showAllNodes();
             drawAllConnections();
-            instantiateMapPaneEventListener();
+            instantiateOutputAreaEventListener();
         }
     }
 
@@ -661,7 +674,7 @@ public class PathFinder extends Application  {
         @Override
         public void handle(ActionEvent event) {
             try{
-                WritableImage image = mapPane.snapshot(null, null);
+                WritableImage image = outputArea.snapshot(null, null);
                 BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
                 ImageIO.write(bufferedImage, "png", new File("capture.png"));
             }catch (IOException e){
@@ -714,7 +727,7 @@ public class PathFinder extends Application  {
                 return;
             }
 
-            showConnectionDialog(fromNode, toNode, false, true);
+            showConnectionDialog(fromNode, toNode, true, true);
         }
     }
 
@@ -724,7 +737,6 @@ public class PathFinder extends Application  {
 
             double xCoordinate = event.getX();
             double yCoordinate = event.getY();
-            //System.out.println(xCoordinate + ":" + yCoordinate);
 
             TextInputDialog tid = new TextInputDialog("");
             tid.setTitle("Name");
@@ -738,7 +750,7 @@ public class PathFinder extends Application  {
                     Location location = new Location(locationName, xCoordinate, yCoordinate);
                     graph.add(location);
                     showNode(location);
-                    instantiateMapPaneEventListener();
+                    instantiateOutputAreaEventListener();
 
                     lastEditIsSaved = false;
                 }
